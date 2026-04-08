@@ -10,12 +10,13 @@ async function getUserId() {
 }
 
 export async function getWeekPlan(weekStart: string): Promise<WeekPlanEntry[]> {
-  const supabase = await createClient()
+  const { supabase, userId } = await getUserId()
   const { data, error } = await withTimeout(
     supabase
       .from('week_plan')
       .select('*, recipes(*)')
       .eq('week_start', weekStart)
+      .eq('user_id', userId)
       .order('day')
   )
   if (error) {
