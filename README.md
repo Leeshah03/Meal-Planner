@@ -1,5 +1,7 @@
 # Weekly Meal Planner
 
+**Live app:** https://meal-planner-alpha-nine.vercel.app/
+
 A mobile-first web app that eliminates dinner decision fatigue for a vegetarian household — plan the week's dinners, track pantry inventory, and auto-generate a smart shopping list that skips ingredients you already have.
 
 ---
