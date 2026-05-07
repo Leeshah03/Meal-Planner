@@ -1,36 +1,147 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Weekly Meal Planner
+
+A mobile-first web app that eliminates dinner decision fatigue for a vegetarian household — plan the week's dinners, track pantry inventory, and auto-generate a smart shopping list that skips ingredients you already have.
+
+---
+
+## Features
+
+- **Week View** — drag-and-drop dinner slots for Sun–Sat, starting fresh each week
+- **Recipe Library** — save vegetarian recipes with ingredients, quantities, and prep time
+- **Pantry Tracker** — log what's in stock; items auto-remove when quantity hits zero
+- **Smart Shopping List** — computed from the week's meals minus pantry stock, grouped by category using fuzzy matching (typo-forgiving: "Tomatoe" matches "Tomatoes")
+- **Magic Link Auth** — passwordless login via Supabase, works seamlessly on phone and laptop
+- **Row-Level Security** — every user sees only their own data
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Database & Auth | Supabase (PostgreSQL + Magic Link) |
+| Styling | Tailwind CSS v4 |
+| Fuzzy Matching | Fuse.js |
+| Toasts | Sonner |
+| Testing | Vitest + Testing Library |
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- A [Supabase](https://supabase.com) project (free tier works)
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/Leeshah03/Meal-Planner.git
+cd Meal-Planner
+npm install
+```
+
+### 2. Configure environment
+
+Create a `.env.local` file in the project root:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+Find these values in your Supabase dashboard under **Project Settings → API**.
+
+### 3. Set up the database
+
+Run the migration in the Supabase SQL editor:
+
+```bash
+# Copy and run the contents of:
+supabase/migrations/001_initial_schema.sql
+```
+
+This creates the `recipes`, `week_plan`, and `pantry` tables with Row-Level Security enabled.
+
+### 4. Run locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) — log in with a Magic Link to get started.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+├── app/
+│   ├── page.tsx              # Week view (home)
+│   ├── recipes/              # Recipe library
+│   ├── pantry/               # Pantry tracker
+│   ├── shopping-list/        # Auto-generated shopping list
+│   ├── login/                # Magic Link login
+│   ├── auth/callback/        # Supabase auth redirect handler
+│   └── components/           # WeekGrid, MealPicker, RecipeCard, PantryItem, ShoppingList
+├── lib/
+│   ├── recipes.ts            # Recipe CRUD
+│   ├── week-plan.ts          # Week plan CRUD
+│   ├── pantry.ts             # Pantry CRUD
+│   ├── shopping-list.ts      # Derived shopping list logic (fuzzy pantry matching)
+│   ├── types.ts              # Shared TypeScript types
+│   └── supabase/             # Supabase client (browser + server)
+└── supabase/
+    └── migrations/           # SQL schema
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How the Shopping List Works
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The shopping list is **derived, not stored** — it's computed fresh each time from:
 
-## Deploy on Vercel
+1. All recipes assigned to the current week
+2. Aggregated ingredients across those recipes
+3. Fuzzy-matched against pantry stock (Fuse.js at 0.2 threshold)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Items already in the pantry appear in a "You already have" section; everything else is grouped by category in the "To buy" list. This avoids sync complexity and keeps pantry data as the single source of truth.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Running Tests
+
+```bash
+npm test          # watch mode
+npm run test:run  # single run (CI)
+```
+
+Tests cover all core data utilities (`recipes`, `week-plan`, `pantry`, `shopping-list`) and key UI components using Vitest + Testing Library.
+
+---
+
+## Design Decisions
+
+| Decision | Reason |
+|---|---|
+| Dinner-only MVP | Keeps scope tight and shippable |
+| Magic Link auth | No passwords to forget; works on phone at the grocery store |
+| Shopping list is computed | Avoids stale data and sync bugs |
+| Week starts Sunday | Matches typical meal planning behavior |
+| Fuse.js at 0.2 threshold | Catches common typos without false positives |
+| Pantry auto-removes at 0 | Less manual cleanup for the user |
+
+---
+
+## Deployment
+
+The app is ready to deploy on [Vercel](https://vercel.com):
+
+```bash
+vercel deploy --prod
+```
+
+Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` as environment variables in the Vercel dashboard. Add your Vercel deployment URL to the **Supabase Auth → Redirect URLs** allowlist.
